@@ -286,9 +286,6 @@
 
       <div class="admin-schedule-box">
         <h4 class="admin-schedule-title">📅 Расписание тренера</h4>
-        <button class="admin-send-btn" onclick="adminStartAdd()">
-          ➕ Добавить тренировку
-        </button>
         <div class="admin-week-tabs">
           <button class="admin-week-tab active" id="admin-current-week-tab" onclick="selectAdminWeek('current')">Текущая неделя</button>
           <button class="admin-week-tab" id="admin-next-week-tab" onclick="selectAdminWeek('next')">Следующая неделя</button>
@@ -407,7 +404,7 @@
       // ИСПРАВЛЕНИЕ: Мягкая обработка ошибки для админа без расписания
       if (String(rawUserId) === String(ADMIN_ID)) {
         document.getElementById('schedule-container').innerHTML = `<div class="status-msg">Вы вошли как Администратор 👑<br>Откройте панель сверху для работы с тренерами.</div>`;
-        document.getElementById('form-card').style.display = 'none';
+        document.getElementById('form-card').style.display = 'block';
         document.getElementById('tabs-control').style.display = 'none';
       } else {
         document.getElementById('schedule-container').innerHTML = `<div class="status-msg" style="color:red;">${err.message}</div>`;
@@ -607,7 +604,16 @@
       if (data.success) {
         showToast(data.message);
         resetForm();
-        loadSchedule();
+
+        const isAdminEditingTrainer =
+          String(rawUserId) === String(ADMIN_ID) &&
+          selectedTrainerId;
+
+        if (isAdminEditingTrainer) {
+          loadAdminSchedule();
+        } else {
+          loadSchedule();
+        }
       } else {
         throw new Error(data.message);
       }
@@ -841,36 +847,6 @@
     // В админском режиме submitForm должен сохранять запись выбранного тренера.
     document.getElementById('form-card').style.display = 'block';
     document.getElementById('form-card').scrollIntoView({ behavior: 'smooth' });
-  }
-
-  function adminStartAdd() {
-    if (!selectedTrainerId) return;
-
-    isEditMode = false;
-    editSlotIndex = -1;
-
-    // Берём выбранную в админке неделю
-    selectedWeek = adminSelectedWeek;
-
-    // Очищаем форму
-    document.getElementById('time').value = "";
-    document.getElementById('client').value = "";
-    document.getElementById('price').value = "";
-    document.getElementById('pool').value = "";
-
-    // Заголовок формы
-    document.getElementById('form-title').innerText = "Новая запись";
-    document.getElementById('submitBtn').innerText = "Записать тренировку";
-    document.getElementById('cancelBtn').style.display = "none";
-    document.getElementById('form-card').classList.remove('edit-mode-active');
-
-    // Показываем форму
-    document.getElementById('form-card').style.display = 'block';
-
-    // Прокручиваем к форме
-    document.getElementById('form-card').scrollIntoView({
-      behavior: 'smooth'
-    });
   }
 
   function adminConfirmDelete(day, slotIndex) {
