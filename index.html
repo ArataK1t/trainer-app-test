@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: var(--tg-theme-secondary-bg-color, #f4f4f5);
+      --card-bg: var(--tg-theme-bg-color, #ffffff);
+      --text-color: var(--tg-theme-text-color, #000000);
+      --hint-color: var(--tg-theme-hint-color, #8e8e93);
+      --btn-color: var(--tg-theme-button-color, #3390ec);
+      --btn-text: var(--tg-theme-button-text-color, #ffffff);
+      --border-color: var(--tg-theme-secondary-bg-color, #e5e5ea);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 12px;
+      padding-bottom: 40px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .segmented-control {
+      display: flex;
+      background-color: var(--border-color);
+      border-radius: 9px;
+      padding: 2px;
+      margin-bottom: 12px;
+    }
+    .segment {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+    .segment.active {
+      background-color: var(--card-bg);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      font-weight: 600;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+    }
+    .card h3 { margin-top: 0; margin-bottom: 12px; font-size: 15px; font-weight: 600; }
+    
+    .card.edit-mode-active {
+      border: 1px solid #e67e22;
+      box-shadow: 0 0 8px rgba(230, 126, 34, 0.2);
+    }
+
+    .day-block { margin-bottom: 16px; }
+    
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .day-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--btn-color);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .slot-item {
+      display: flex;
+      align-items: center;
+      background-color: var(--bg-color);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 4px;
+      border-left: 3px solid var(--btn-color);
+      transition: all 0.3s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .muted-slot { opacity: 0.45; filter: grayscale(40%); border-left-color: #8e8e93; }
+    
+    .slot-time { font-weight: 700; font-size: 14px; margin-right: 12px; min-width: 42px; }
+    
+    /* ИСПРАВЛЕННЫЙ СКРОЛЛ */
+    .slot-info { 
+      flex: 1; 
+      font-size: 14px; 
+      white-space: nowrap; 
+      overflow-x: auto; 
+      min-width: 0; /* Обязательное условие для скролла во flexbox */
+      -webkit-overflow-scrolling: touch; /* Плавный скролл на мобилках */
+      scrollbar-width: none; 
+    }
+    .slot-info::-webkit-scrollbar { 
+      display: none; 
+    }
+
+    .slot-price { font-weight: 600; color: #2ecc71; margin: 0 6px; }
+    .slot-pool { color: var(--hint-color); font-size: 12px; }
+    
+    .edit-action-btn {
+      background: none; border: none; font-size: 14px; cursor: pointer; padding: 4px; margin-left: 8px; opacity: 0.6;
+      flex-shrink: 0; /* Чтобы кнопки не сжимались */
+    }
+    .edit-action-btn:hover { opacity: 1; }
+
+    label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px; color: var(--hint-color); }
+    input, select {
+      width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-color);
+      border-radius: 7px; background-color: var(--bg-color); color: var(--text-color);
+      font-size: 16px; box-sizing: border-box; outline: none; font-family: inherit; -webkit-appearance: none;
+    }
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+
+    .btn-group { display: flex; gap: 8px; }
+    .submit-btn {
+      flex: 2; background-color: var(--btn-color); color: var(--btn-text);
+      border: none; border-radius: 9px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .cancel-btn {
+      flex: 1; background-color: #e74c3c; color: #fff;
+      border: none; border-radius: 9px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+      display: none;
+    }
+    .submit-btn:disabled, .cancel-btn:disabled { opacity: 0.5; }
+
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px;
+      font-size: 14px; z-index: 1000; display: none; animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .status-msg { text-align: center; color: var(--hint-color); font-size: 14px; padding: 15px; }
+
+    /* === СТИЛИ АДМИН ПАНЕЛИ === */
+    #admin-btn {
+      background-color: #333333;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+      margin-bottom: 12px;
+      display: none; 
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    #admin-panel {
+      display: none;
+      background-color: var(--card-bg);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .trainer-item {
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .trainer-item:last-child { border-bottom: none; }
+    
+    #admin-msg-box { display: none; margin-top: 10px; }
+    #selected-trainer-name { margin-top: 0; margin-bottom: 12px; font-size: 14px; color: var(--btn-color); }
+    
+    .admin-textarea {
+      width: 100%;
+      min-height: 44px;
+      box-sizing: border-box;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: none; 
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    .admin-send-btn {
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-top: 10px;
+      width: 100%;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .admin-back-btn {
+      background: none;
+      border: none;
+      color: var(--hint-color);
+      font-size: 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="admin-btn" onclick="toggleAdminPanel()">👑 Админ-панель</button>
+
+  <div id="admin-panel">
+    <div id="trainers-list-container">
+      <h3 style="margin-top: 0;">Список тренеров</h3>
+      <div id="trainers-list">Загрузка...</div>
+    </div>
+    
+    <div id="admin-msg-box">
+      <button class="admin-back-btn" onclick="backToTrainersList()">⬅ Назад к списку</button>
+      <h4 id="selected-trainer-name"></h4>
+      <textarea id="admin-textarea" class="admin-textarea" placeholder="Введите сообщение..." rows="1"></textarea>
+      <button class="admin-send-btn" id="admin-send-btn" onclick="sendAdminMessage()">Отправить сообщение</button>
+    </div>
+  </div>
+
+  <div class="segmented-control" id="tabs-control">
+    <div class="segment active" data-week="current" onclick="selectWeek('current')">Текущая неделя</div>
+    <div class="segment" data-week="next" onclick="selectWeek('next')">Следующая неделя</div>
+  </div>
+
+  <div class="card" id="schedule-card">
+    <h3>Расписание занятий</h3>
+    <div id="schedule-container"><div class="status-msg">Загрузка...</div></div>
+  </div>
+
+  <div class="card" id="form-card">
+    <h3 id="form-title">Новая запись</h3>
+    <div class="row">
+      <div class="col" style="flex: 1.4;">
+        <label>День недели</label>
+        <select id="day">
+          <option value="понедельник">Понедельник</option>
+          <option value="вторник">Вторник</option>
+          <option value="среда">Среда</option>
+          <option value="четверг">Четверг</option>
+          <option value="пятница">Пятница</option>
+          <option value="суббота">Суббота</option>
+          <option value="воскресенье">Воскресенье</option>
+        </select>
+      </div>
+      <div class="col" style="flex: 1;">
+        <label>Время</label>
+        <input type="time" id="time" required>
+      </div>
+    </div>
+    
+    <label>Имя клиента</label>
+    <input type="text" id="client" placeholder="Имя клиента" required>
+    
+    <div class="row">
+      <div class="col">
+        <label>Цена (руб)</label>
+        <input type="number" id="price" placeholder="2000" inputmode="numeric" required>
+      </div>
+      <div class="col">
+        <label>Бассейн</label>
+        <input type="text" id="pool" placeholder="Лужники" required>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="cancel-btn" id="cancelBtn" onclick="resetForm()">Отмена</button>
+      <button class="submit-btn" id="submitBtn" onclick="submitForm()">Записать тренировку</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  let selectedWeek = 'current';
+  let scheduleCache = null;
+  let rawUserId = null;
+  
+  const ADMIN_ID = '1025255996';
+
+  let isEditMode = false;
+  let editSlotIndex = -1;
+
+  const DAYS_ORDER = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье'];
+
+  // !!! ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ИЗ GOOGLE APPS SCRIPT !!!
+  const GOOGLE_APP_URL = "https://script.google.com/macros/s/AKfycbw1bNcwZg6HaQcsFQqLq6lDlPg3AVehnHMarck6nt1-cU_Dwb196SOL-VlNOiDXY9Ck/exec";
+
+  function initApp() {
+    if (tg) { tg.ready(); tg.expand(); rawUserId = tg.initDataUnsafe?.user?.id; }
+    
+    const todayIndex = new Date().getDay();
+    document.getElementById('day').value = DAYS_ORDER[todayIndex === 0 ? 6 : todayIndex - 1];
+    
+    checkAdmin();
+    loadSchedule();
+  }
+
+  function checkAdmin() {
+    // Включаем кнопку админа независимо от ошибок бэкенда
+    if (String(rawUserId) === String(ADMIN_ID)) {
+      document.getElementById('admin-btn').style.display = 'block';
+    }
+  }
+
+  function loadSchedule() {
+    if (!rawUserId) {
+      document.getElementById('schedule-container').innerHTML = "<div class='status-msg'>ID пользователя не определен. Откройте приложение через Telegram.</div>";
+      return;
+    }
+    
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getSchedule', userId: rawUserId })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      scheduleCache = data;
+      renderUI();
+    })
+    .catch(err => {
+      // ИСПРАВЛЕНИЕ: Мягкая обработка ошибки для админа без расписания
+      if (String(rawUserId) === String(ADMIN_ID)) {
+        document.getElementById('schedule-container').innerHTML = `<div class="status-msg">Вы вошли как Администратор 👑<br>Откройте панель сверху для работы с тренерами.</div>`;
+        document.getElementById('form-card').style.display = 'none';
+        document.getElementById('tabs-control').style.display = 'none';
+      } else {
+        document.getElementById('schedule-container').innerHTML = `<div class="status-msg" style="color:red;">${err.message}</div>`;
+      }
+    });
+  }
+
+  window.addEventListener('load', initApp);
+
+  function selectWeek(week) {
+    selectedWeek = week;
+    document.querySelectorAll('.segment').forEach(el => el.classList.remove('active'));
+    document.querySelector(`[data-week="${week}"]`).classList.add('active');
+    resetForm();
+    renderUI();
+  }
+
+  function renderUI() {
+    if (!scheduleCache) return;
+    const container = document.getElementById('schedule-container');
+    const formCard = document.getElementById('form-card');
+
+    if (selectedWeek === 'next' && !scheduleCache.nextWeekExists) {
+      container.innerHTML = '<div class="status-msg">📅 Новая неделя еще не добавлена в таблицу.</div>';
+      formCard.style.display = 'none';
+      return;
+    }
+
+    formCard.style.display = 'block';
+    const weekData = scheduleCache[selectedWeek];
+    let html = '';
+    let hasAnySlots = false;
+
+    DAYS_ORDER.forEach(day => {
+      const dayData = weekData[day];
+      if (!dayData || !dayData.slots || dayData.slots.length === 0) return;
+
+      hasAnySlots = true;
+      const dayTitle = day.charAt(0).toUpperCase() + day.slice(1);
+      
+      html += `
+        <div class="day-block">
+          <div class="day-header">
+            <div class="day-title">${dayTitle}</div>
+          </div>`;
+      
+      dayData.slots.forEach((slot, index) => {
+        const muteIcon = slot.isMuted ? '🔕' : '🔔';
+        
+        html += `
+          <div class="slot-item ${slot.isMuted ? 'muted-slot' : ''}">
+            <div class="slot-time">${slot.time}</div>
+            <div class="slot-info">
+              <strong>${slot.client}</strong> 
+              <span class="slot-price">${slot.price ? slot.price + '₽' : ''}</span> 
+              <span class="slot-pool">• ${slot.pool}</span>
+            </div>
+            <button class="edit-action-btn" onclick="toggleMute('${day}', ${index}, ${slot.isMuted})" title="Вкл/Выкл уведомление">${muteIcon}</button>
+            <button class="edit-action-btn" onclick="startEdit('${day}', ${index})">✏️</button>
+          </div>`;
+      });
+      html += `</div>`;
+    });
+
+    container.innerHTML = hasAnySlots ? html : '<div class="status-msg">🎉 На этой неделе нет запланированных тренировок!</div>';
+  }
+
+  function startEdit(day, index) {
+    isEditMode = true;
+    editSlotIndex = index;
+    
+    const slot = scheduleCache[selectedWeek][day].slots[index];
+    
+    document.getElementById('day').value = day;
+    document.getElementById('time').value = slot.time;
+    document.getElementById('client').value = slot.client;
+    document.getElementById('price').value = slot.price;
+    document.getElementById('pool').value = slot.pool;
+    
+    document.getElementById('form-title').innerText = "✏️ Редактирование записи";
+    document.getElementById('submitBtn').innerText = "Сохранить изменения";
+    document.getElementById('cancelBtn').style.display = "block";
+    document.getElementById('form-card').classList.add('edit-mode-active');
+    
+    document.getElementById('form-card').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    isEditMode = false;
+    editSlotIndex = -1;
+    
+    document.getElementById('time').value = "";
+    document.getElementById('client').value = "";
+    document.getElementById('price').value = "";
+    
+    document.getElementById('form-title').innerText = "Новая запись";
+    document.getElementById('submitBtn').innerText = "Записать тренировку";
+    document.getElementById('cancelBtn').style.display = "none";
+    document.getElementById('form-card').classList.remove('edit-mode-active');
+  }
+
+  function showToast(text) {
+    const t = document.getElementById('toast');
+    t.innerText = text; t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 2500);
+  }
+
+  function toggleMute(day, slotIndex, currentMuteStatus) {
+    showToast("Обновление статуса...");
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ 
+        action: 'toggleMute', 
+        userId: rawUserId, 
+        week: selectedWeek, 
+        day: day, 
+        slotIndex: slotIndex,
+        isMuted: !currentMuteStatus 
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        scheduleCache[selectedWeek][day].slots[slotIndex].isMuted = !currentMuteStatus;
+        renderUI();
+        showToast(!currentMuteStatus ? "🔕 Тренировка отменена" : "🔔 Уведомления включены");
+      } else {
+        showToast("Ошибка: " + data.error);
+      }
+    });
+  }
+
+  function submitForm() {
+    const formData = {
+      week: selectedWeek,
+      day: document.getElementById('day').value,
+      time: document.getElementById('time').value,
+      client: document.getElementById('client').value.trim(),
+      price: document.getElementById('price').value.trim(),
+      pool: document.getElementById('pool').value.trim(),
+      slotIndex: isEditMode ? editSlotIndex : -1
+    };
+
+    if (!formData.time || !formData.client || !formData.price || !formData.pool) {
+      tg?.showAlert("Заполните все поля формы!"); return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveRecord', userId: rawUserId, formData: formData })
+    })
+    .then(res => res.json())
+    .then(data => {
+      btn.disabled = false;
+      if (data.success) {
+        showToast(data.message);
+        resetForm();
+        loadSchedule();
+      } else {
+        throw new Error(data.message);
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      tg?.showAlert("Ошибка: " + err.message);
+    });
+  }
+
+  // === ЛОГИКА АДМИН-ПАНЕЛИ ===
+  let selectedTrainerId = null;
+
+  function toggleAdminPanel() {
+    const panel = document.getElementById('admin-panel');
+    const isHidden = panel.style.display === 'none' || panel.style.display === '';
+    
+    if (isHidden) {
+      panel.style.display = 'block';
+      // Скрываем основной интерфейс, чтобы админка заняла весь экран
+      document.getElementById('tabs-control').style.display = 'none';
+      document.getElementById('form-card').style.display = 'none';
+      document.getElementById('schedule-card').style.display = 'none';
+      
+      document.getElementById('admin-btn').innerText = '❌ Закрыть Админ-панель';
+      loadTrainersList();
+    } else {
+      panel.style.display = 'none';
+      document.getElementById('admin-btn').innerText = '👑 Админ-панель';
+      
+      // Возвращаем интерфейс обратно, если админ также является тренером
+      if (scheduleCache) {
+        document.getElementById('tabs-control').style.display = 'flex';
+        document.getElementById('form-card').style.display = 'block';
+      }
+      document.getElementById('schedule-card').style.display = 'block';
+    }
+  }
+
+  function loadTrainersList() {
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'getTrainers' })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        let html = '';
+        data.trainers.forEach(t => {
+          html += `<div class="trainer-item" onclick="openMsgBox('${t.id}', '${t.name}')">👤 ${t.name}</div>`;
+        });
+        document.getElementById('trainers-list').innerHTML = html || 'Тренеры не найдены';
+      }
+    });
+  }
+
+  function openMsgBox(id, name) {
+    selectedTrainerId = id;
+    document.getElementById('selected-trainer-name').innerText = `Кому: ${name}`;
+    document.getElementById('trainers-list-container').style.display = 'none';
+    document.getElementById('admin-msg-box').style.display = 'block';
+  }
+
+  function backToTrainersList() {
+    document.getElementById('admin-msg-box').style.display = 'none';
+    document.getElementById('trainers-list-container').style.display = 'block';
+    document.getElementById('admin-textarea').value = '';
+    document.getElementById('admin-textarea').style.height = 'auto'; // Сброс высоты
+  }
+
+  // Автомасштабирование поля ввода текста
+  const adminTx = document.getElementById('admin-textarea');
+  if (adminTx) {
+    adminTx.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    }, false);
+  }
+
+  function sendAdminMessage() {
+    const text = adminTx.value.trim();
+    if (!text) {
+      if (window.Telegram && Telegram.WebApp) Telegram.WebApp.showAlert("Введите текст сообщения");
+      return;
+    }
+    
+    const btn = document.getElementById('admin-send-btn');
+    btn.disabled = true;
+    btn.innerText = 'Отправка...';
+
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ 
+        action: 'sendAdminMessage', 
+        targetUserId: selectedTrainerId, 
+        message: text 
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerText = 'Отправить сообщение';
+      
+      if (data.success) {
+        showToast("✅ Сообщение отправлено!");
+        backToTrainersList();
+      } else {
+        if (window.Telegram && Telegram.WebApp) Telegram.WebApp.showAlert("Ошибка: " + data.error);
+      }
+    });
+  }
+</script>
+</body>
+</html>
