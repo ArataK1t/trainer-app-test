@@ -404,7 +404,7 @@
       // ИСПРАВЛЕНИЕ: Мягкая обработка ошибки для админа без расписания
       if (String(rawUserId) === String(ADMIN_ID)) {
         document.getElementById('schedule-container').innerHTML = `<div class="status-msg">Вы вошли как Администратор 👑<br>Откройте панель сверху для работы с тренерами.</div>`;
-        document.getElementById('form-card').style.display = 'block';
+        document.getElementById('form-card').style.display = 'none';
         document.getElementById('tabs-control').style.display = 'none';
       } else {
         document.getElementById('schedule-container').innerHTML = `<div class="status-msg" style="color:red;">${err.message}</div>`;
@@ -604,16 +604,7 @@
       if (data.success) {
         showToast(data.message);
         resetForm();
-
-        const isAdminEditingTrainer =
-          String(rawUserId) === String(ADMIN_ID) &&
-          selectedTrainerId;
-
-        if (isAdminEditingTrainer) {
-          loadAdminSchedule();
-        } else {
-          loadSchedule();
-        }
+        loadSchedule();
       } else {
         throw new Error(data.message);
       }
@@ -680,7 +671,6 @@
     document.getElementById('selected-trainer-name').innerText = `Кому: ${name}`;
     document.getElementById('trainers-list-container').style.display = 'none';
     document.getElementById('admin-msg-box').style.display = 'block';
-    document.getElementById('form-card').style.display = 'none';
 
     updateAdminWeekTabs();
     document.getElementById('admin-schedule-container').innerHTML =
