@@ -213,6 +213,59 @@
       cursor: pointer;
       padding: 0;
     }
+    .admin-schedule-box { margin-top: 16px; }
+    .admin-schedule-title { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+    .admin-week-tabs {
+      display: flex;
+      background-color: var(--border-color);
+      border-radius: 8px;
+      padding: 2px;
+      margin-bottom: 12px;
+    }
+    .admin-week-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text-color);
+      padding: 7px 5px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .admin-week-tab.active {
+      background-color: var(--card-bg);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .admin-slot-item {
+      display: flex;
+      align-items: center;
+      background-color: var(--bg-color);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 4px;
+      border-left: 3px solid var(--btn-color);
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .admin-slot-info {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .admin-slot-info::-webkit-scrollbar { display: none; }
+    .admin-slot-time {
+      font-weight: 700;
+      font-size: 13px;
+      margin-right: 10px;
+      min-width: 40px;
+    }
+    .admin-slot-price { font-weight: 600; color: #2ecc71; margin: 0 5px; }
+    .admin-slot-pool { color: var(--hint-color); font-size: 11px; }
+
   </style>
 </head>
 <body>
@@ -230,6 +283,17 @@
       <h4 id="selected-trainer-name"></h4>
       <textarea id="admin-textarea" class="admin-textarea" placeholder="Введите сообщение..." rows="1"></textarea>
       <button class="admin-send-btn" id="admin-send-btn" onclick="sendAdminMessage()">Отправить сообщение</button>
+
+      <div class="admin-schedule-box">
+        <h4 class="admin-schedule-title">📅 Расписание тренера</h4>
+        <div class="admin-week-tabs">
+          <button class="admin-week-tab active" id="admin-current-week-tab" onclick="selectAdminWeek('current')">Текущая неделя</button>
+          <button class="admin-week-tab" id="admin-next-week-tab" onclick="selectAdminWeek('next')">Следующая неделя</button>
+        </div>
+        <div id="admin-schedule-container">
+          <div class="status-msg">Загрузка...</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -400,6 +464,7 @@
             </div>
             <button class="edit-action-btn" onclick="toggleMute('${day}', ${index}, ${slot.isMuted})" title="Вкл/Выкл уведомление">${muteIcon}</button>
             <button class="edit-action-btn" onclick="startEdit('${day}', ${index})">✏️</button>
+            <button class="edit-action-btn" onclick="confirmDelete('${day}', ${index})" title="Удалить запись">🗑️</button>
           </div>`;
       });
       html += `</div>`;
@@ -474,6 +539,38 @@
     });
   }
 
+  function confirmDelete(day, slotIndex) {
+    const slot = scheduleCache[selectedWeek][day].slots[slotIndex];
+    const details = `${slot.time} — ${slot.client}`;
+
+    const confirmed = window.confirm(`Удалить запись?\n\n${details}`);
+    if (!confirmed) return;
+
+    showToast("Удаление...");
+
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'deleteRecord',
+        userId: rawUserId,
+        week: selectedWeek,
+        day: day,
+        slotIndex: slotIndex
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast("🗑️ Запись удалена");
+        loadSchedule();
+      } else {
+        throw new Error(data.error || data.message || "Не удалось удалить запись");
+      }
+    })
+    .catch(err => tg?.showAlert("Ошибка: " + err.message));
+  }
+
   function submitForm() {
     const formData = {
       week: selectedWeek,
@@ -495,7 +592,11 @@
     fetch(GOOGLE_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'saveRecord', userId: rawUserId, formData: formData })
+      body: JSON.stringify({
+        action: 'saveRecord',
+        userId: (String(rawUserId) === String(ADMIN_ID) && selectedTrainerId) ? selectedTrainerId : rawUserId,
+        formData: formData
+      })
     })
     .then(res => res.json())
     .then(data => {
@@ -516,6 +617,8 @@
 
   // === ЛОГИКА АДМИН-ПАНЕЛИ ===
   let selectedTrainerId = null;
+  let adminScheduleCache = null;
+  let adminSelectedWeek = 'current';
 
   function toggleAdminPanel() {
     const panel = document.getElementById('admin-panel');
@@ -562,16 +665,208 @@
 
   function openMsgBox(id, name) {
     selectedTrainerId = id;
+    adminScheduleCache = null;
+    adminSelectedWeek = 'current';
+
     document.getElementById('selected-trainer-name').innerText = `Кому: ${name}`;
     document.getElementById('trainers-list-container').style.display = 'none';
     document.getElementById('admin-msg-box').style.display = 'block';
+
+    updateAdminWeekTabs();
+    document.getElementById('admin-schedule-container').innerHTML =
+      '<div class="status-msg">Загрузка расписания...</div>';
+
+    loadAdminSchedule();
   }
 
   function backToTrainersList() {
     document.getElementById('admin-msg-box').style.display = 'none';
     document.getElementById('trainers-list-container').style.display = 'block';
     document.getElementById('admin-textarea').value = '';
-    document.getElementById('admin-textarea').style.height = 'auto'; // Сброс высоты
+    document.getElementById('admin-textarea').style.height = 'auto';
+    selectedTrainerId = null;
+    adminScheduleCache = null;
+  }
+
+  function selectAdminWeek(week) {
+    adminSelectedWeek = week;
+    updateAdminWeekTabs();
+    renderAdminSchedule();
+  }
+
+  function updateAdminWeekTabs() {
+    document.getElementById('admin-current-week-tab').classList.toggle(
+      'active', adminSelectedWeek === 'current'
+    );
+    document.getElementById('admin-next-week-tab').classList.toggle(
+      'active', adminSelectedWeek === 'next'
+    );
+  }
+
+  function loadAdminSchedule() {
+    if (!selectedTrainerId) return;
+
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'getSchedule',
+        userId: selectedTrainerId
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      adminScheduleCache = data;
+      renderAdminSchedule();
+    })
+    .catch(err => {
+      document.getElementById('admin-schedule-container').innerHTML =
+        `<div class="status-msg" style="color:red;">${err.message}</div>`;
+    });
+  }
+
+  function renderAdminSchedule() {
+    const container = document.getElementById('admin-schedule-container');
+
+    if (!adminScheduleCache) {
+      container.innerHTML = '<div class="status-msg">Загрузка расписания...</div>';
+      return;
+    }
+
+    if (adminSelectedWeek === 'next' && !adminScheduleCache.nextWeekExists) {
+      container.innerHTML =
+        '<div class="status-msg">📅 Новая неделя еще не добавлена в таблицу.</div>';
+      return;
+    }
+
+    const weekData = adminScheduleCache[adminSelectedWeek];
+    if (!weekData) {
+      container.innerHTML = '<div class="status-msg">Расписание не найдено.</div>';
+      return;
+    }
+
+    let html = '';
+    let hasAnySlots = false;
+
+    DAYS_ORDER.forEach(day => {
+      const dayData = weekData[day];
+      if (!dayData || !dayData.slots || dayData.slots.length === 0) return;
+
+      hasAnySlots = true;
+      const dayTitle = day.charAt(0).toUpperCase() + day.slice(1);
+
+      html += `
+        <div class="day-block">
+          <div class="day-header">
+            <div class="day-title">${dayTitle}</div>
+          </div>`;
+
+      dayData.slots.forEach((slot, index) => {
+        const muteIcon = slot.isMuted ? '🔕' : '🔔';
+
+        html += `
+          <div class="admin-slot-item ${slot.isMuted ? 'muted-slot' : ''}">
+            <div class="admin-slot-time">${slot.time}</div>
+            <div class="admin-slot-info">
+              <strong>${slot.client}</strong>
+              <span class="admin-slot-price">${slot.price ? slot.price + '₽' : ''}</span>
+              <span class="admin-slot-pool">• ${slot.pool}</span>
+            </div>
+            <button class="edit-action-btn" onclick="adminToggleMute('${day}', ${index})" title="Вкл/Выкл уведомление">${muteIcon}</button>
+            <button class="edit-action-btn" onclick="adminStartEdit('${day}', ${index})" title="Редактировать">✏️</button>
+            <button class="edit-action-btn" onclick="adminConfirmDelete('${day}', ${index})" title="Удалить запись">🗑️</button>
+          </div>`;
+      });
+
+      html += `</div>`;
+    });
+
+    container.innerHTML = hasAnySlots
+      ? html
+      : '<div class="status-msg">🎉 На этой неделе нет запланированных тренировок!</div>';
+  }
+
+  function adminToggleMute(day, slotIndex) {
+    const slot = adminScheduleCache[adminSelectedWeek][day].slots[slotIndex];
+    const newMuteStatus = !slot.isMuted;
+
+    showToast("Обновление статуса...");
+
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'toggleMute',
+        userId: selectedTrainerId,
+        week: adminSelectedWeek,
+        day: day,
+        slotIndex: slotIndex,
+        isMuted: newMuteStatus
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) throw new Error(data.error || "Не удалось изменить статус");
+
+      adminScheduleCache[adminSelectedWeek][day].slots[slotIndex].isMuted = newMuteStatus;
+      renderAdminSchedule();
+      showToast(newMuteStatus ? "🔕 Тренировка отменена" : "🔔 Уведомления включены");
+    })
+    .catch(err => tg?.showAlert("Ошибка: " + err.message));
+  }
+
+  function adminStartEdit(day, index) {
+    const slot = adminScheduleCache[adminSelectedWeek][day].slots[index];
+
+    document.getElementById('day').value = day;
+    document.getElementById('time').value = slot.time;
+    document.getElementById('client').value = slot.client;
+    document.getElementById('price').value = slot.price;
+    document.getElementById('pool').value = slot.pool;
+
+    isEditMode = true;
+    editSlotIndex = index;
+    selectedWeek = adminSelectedWeek;
+
+    document.getElementById('form-title').innerText = "✏️ Редактирование записи";
+    document.getElementById('submitBtn').innerText = "Сохранить изменения";
+    document.getElementById('cancelBtn').style.display = "block";
+    document.getElementById('form-card').classList.add('edit-mode-active');
+
+    // В админском режиме submitForm должен сохранять запись выбранного тренера.
+    document.getElementById('form-card').style.display = 'block';
+    document.getElementById('form-card').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function adminConfirmDelete(day, slotIndex) {
+    const slot = adminScheduleCache[adminSelectedWeek][day].slots[slotIndex];
+    const details = `${slot.time} — ${slot.client}`;
+
+    const confirmed = window.confirm(`Удалить запись у тренера?\n\n${details}`);
+    if (!confirmed) return;
+
+    showToast("Удаление...");
+
+    fetch(GOOGLE_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'deleteRecord',
+        userId: selectedTrainerId,
+        week: adminSelectedWeek,
+        day: day,
+        slotIndex: slotIndex
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) throw new Error(data.error || data.message || "Не удалось удалить запись");
+
+      showToast("🗑️ Запись удалена");
+      loadAdminSchedule();
+    })
+    .catch(err => tg?.showAlert("Ошибка: " + err.message));
   }
 
   // Автомасштабирование поля ввода текста
