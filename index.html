@@ -163,22 +163,96 @@
     #admin-panel {
       display: none;
       background-color: var(--card-bg);
-      padding: 16px;
-      border-radius: 12px;
+      padding: 12px;
+      border-radius: 14px;
       margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .admin-panel-title {
+      margin: 2px 2px 12px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .trainer-list {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--card-bg);
     }
     .trainer-item {
-      padding: 12px 8px;
-      border-bottom: 1px solid var(--border-color);
+      padding: 13px 12px;
       cursor: pointer;
-      font-weight: 500;
+      font-weight: 600;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      transition: background .15s ease;
     }
     .trainer-item:last-child { border-bottom: none; }
-    
+    .trainer-item:active { background: var(--bg-color); }
+
     #admin-msg-box { display: none; margin-top: 10px; }
-    #selected-trainer-name { margin-top: 0; margin-bottom: 12px; font-size: 14px; color: var(--btn-color); }
-    
+    .admin-trainer-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    #selected-trainer-name { margin: 0; font-size: 15px; font-weight: 700; color: var(--text-color); }
+
+    .admin-section {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--card-bg);
+      margin-top: 10px;
+    }
+    .admin-section-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: none;
+      background: var(--card-bg);
+      color: var(--text-color);
+      padding: 13px 12px;
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+    .admin-section-header-main {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .admin-section-title { font-size: 14px; font-weight: 700; }
+    .admin-section-subtitle {
+      font-size: 11px;
+      color: var(--hint-color);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+    .admin-section-chevron {
+      font-size: 14px;
+      color: var(--hint-color);
+      transition: transform .18s ease;
+      flex-shrink: 0;
+    }
+    .admin-section.open .admin-section-chevron { transform: rotate(180deg); }
+    .admin-section-content {
+      display: none;
+      padding: 0 12px 12px;
+      border-top: 1px solid var(--border-color);
+    }
+    .admin-section.open .admin-section-content { display: block; }
+    .admin-section-separator {
+      height: 1px;
+      background: var(--border-color);
+      margin: 12px 0;
+    }
+    .admin-section:first-of-type { margin-top: 0; }
+
     .admin-textarea {
       width: 100%;
       min-height: 44px;
@@ -215,11 +289,10 @@
     }
     /* === ОТЧЁТ ПО ДОХОДУ === */
     .admin-report-card {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border-color);
+      margin: 0;
+      padding-top: 12px;
     }
-    .admin-report-card h4 { margin: 0 0 12px; font-size: 14px; }
+    .admin-report-card h4 { margin: 0 0 10px; font-size: 14px; }
     .report-hint {
       font-size: 11px;
       line-height: 1.35;
@@ -291,6 +364,85 @@
     .report-copy-btn { background: var(--border-color); color: var(--text-color); }
     .report-send-btn { background: #2ecc71; color: #fff; }
 
+    .report-date-field { position: relative; }
+    .report-range-trigger {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font: inherit;
+      font-size: 15px;
+      text-align: left;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .report-range-trigger:active { opacity: .82; }
+    .report-range-trigger-value { min-width: 0; }
+    .report-range-trigger-icon { color: var(--hint-color); font-size: 13px; flex-shrink: 0; }
+    .report-calendar-popover {
+      position: relative;
+      margin-top: -4px;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: var(--card-bg);
+    }
+    .report-calendar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .report-calendar-head-title { font-size: 13px; font-weight: 700; }
+    .report-calendar-nav {
+      width: 32px; height: 32px; border: none; border-radius: 8px;
+      background: var(--bg-color); color: var(--text-color); cursor: pointer;
+      font-size: 16px; line-height: 1;
+    }
+    .report-calendar-weekdays, .report-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .report-calendar-weekdays { margin-bottom: 4px; }
+    .report-calendar-weekday {
+      text-align: center; font-size: 10px; color: var(--hint-color); font-weight: 600; padding: 4px 0;
+    }
+    .report-calendar-day {
+      position: relative; border: none; background: transparent; color: var(--text-color);
+      aspect-ratio: 1 / 1; border-radius: 7px; cursor: pointer; font: inherit; font-size: 13px;
+      min-width: 0;
+    }
+    .report-calendar-day:hover { background: var(--bg-color); }
+    .report-calendar-day.is-today { font-weight: 800; }
+    .report-calendar-day.is-start, .report-calendar-day.is-end {
+      background: var(--btn-color); color: var(--btn-text); font-weight: 700;
+    }
+    .report-calendar-day.in-range { background: color-mix(in srgb, var(--btn-color) 12%, transparent); border-radius: 0; }
+    .report-calendar-day.is-start.in-range { border-radius: 7px 0 0 7px; }
+    .report-calendar-day.is-end.in-range { border-radius: 0 7px 7px 0; }
+    .report-calendar-day.is-start.is-end { border-radius: 7px; }
+    .report-calendar-day.is-outside { visibility: hidden; }
+    .report-calendar-footer {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px;
+    }
+    .report-calendar-selection { font-size: 11px; color: var(--hint-color); line-height: 1.3; }
+    .report-calendar-done {
+      border: none; border-radius: 8px; padding: 8px 12px;
+      background: var(--btn-color); color: var(--btn-text); font-weight: 700; cursor: pointer;
+    }
+    @supports not (color: color-mix(in srgb, black 10%, white)) {
+      .report-calendar-day.in-range { background: rgba(51,144,236,.10); }
+    }
+
     .admin-schedule-box { margin-top: 16px; }
     .admin-schedule-title { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
     .admin-week-tabs {
@@ -352,61 +504,127 @@
 
   <div id="admin-panel">
     <div id="trainers-list-container">
-      <h3 style="margin-top: 0;">Список тренеров</h3>
-      <div id="trainers-list">Загрузка...</div>
+      <div class="admin-panel-title">👑 Админ-панель</div>
+      <div id="trainers-list" class="trainer-list">Загрузка...</div>
     </div>
-    
+
     <div id="admin-msg-box">
-      <button class="admin-back-btn" onclick="backToTrainersList()">⬅ Назад к списку</button>
-      <h4 id="selected-trainer-name"></h4>
+      <div class="admin-trainer-top">
+        <button class="admin-back-btn" onclick="backToTrainersList()">⬅ Назад</button>
+        <h4 id="selected-trainer-name"></h4>
+      </div>
 
-      <div class="admin-report-card">
-        <h4>📊 Расчёт дохода</h4>
-        <div class="report-hint">Синие записи считаются отменёнными и не входят в сумму. Чёрные записи считаются проведёнными.</div>
-        <div class="row">
-          <div class="col">
-            <label>С</label>
-            <input type="date" id="report-start-date">
-          </div>
-          <div class="col">
-            <label>По</label>
-            <input type="date" id="report-end-date">
-          </div>
-        </div>
-        <label>Комиссия тренера, %</label>
-        <input type="number" id="report-percent" min="0" max="100" step="1" inputmode="numeric">
-        <button class="report-calc-btn" id="report-calc-btn" onclick="calculateReport()">📊 Рассчитать период</button>
+      <div class="admin-section open" id="admin-report-section">
+        <button class="admin-section-header" onclick="toggleAdminSection('report')" aria-expanded="true">
+          <span class="admin-section-header-main">
+            <span>📊</span>
+            <span>
+              <span class="admin-section-title">Расчёт дохода</span>
+              <span class="admin-section-subtitle">Проведённые, отменённые, комиссия и выплата</span>
+            </span>
+          </span>
+          <span class="admin-section-chevron">⌄</span>
+        </button>
+        <div class="admin-section-content">
+          <div class="admin-report-card">
+            <div class="report-hint">Синие записи считаются отменёнными и не входят в сумму. Чёрные записи считаются проведёнными.</div>
 
-        <div class="report-result" id="report-result" style="display:none;">
-          <div class="report-title" id="report-title"></div>
-          <div class="report-grid">
-            <div class="report-stat"><span class="report-stat-label">Проведено</span><span class="report-stat-value" id="report-conducted"></span></div>
-            <div class="report-stat"><span class="report-stat-label">Отменено</span><span class="report-stat-value" id="report-cancelled"></span></div>
-          </div>
-          <div class="report-total">
-            <div class="report-total-row"><span>Общая сумма</span><strong id="report-total-amount"></strong></div>
-            <div class="report-total-row"><span>Комиссия сервиса</span><strong id="report-commission"></strong></div>
-            <div class="report-total-row main"><span>Тренеру</span><strong id="report-trainer-amount"></strong></div>
-          </div>
-          <textarea class="report-textarea" id="report-message" readonly></textarea>
-          <div class="report-actions">
-            <button class="report-copy-btn" id="report-copy-btn" onclick="copyReport()">📋 Скопировать</button>
-            <button class="report-send-btn" id="report-send-btn" onclick="sendTrainerReport()">📨 Отправить тренеру</button>
+            <label>Период расчёта</label>
+            <div class="report-date-field">
+              <button type="button" class="report-range-trigger" id="report-range-trigger" onclick="toggleReportCalendar()" aria-expanded="false">
+                <span class="report-range-trigger-value" id="report-range-display">—</span>
+                <span class="report-range-trigger-icon">▾</span>
+              </button>
+              <input type="hidden" id="report-start-date">
+              <input type="hidden" id="report-end-date">
+
+              <div class="report-calendar-popover" id="report-calendar-popover" style="display:none;">
+                <div class="report-calendar-head">
+                  <button type="button" class="report-calendar-nav" onclick="changeReportCalendarMonth(-1)" aria-label="Предыдущий месяц">‹</button>
+                  <div class="report-calendar-head-title" id="report-calendar-month-title"></div>
+                  <button type="button" class="report-calendar-nav" onclick="changeReportCalendarMonth(1)" aria-label="Следующий месяц">›</button>
+                </div>
+                <div class="report-calendar-weekdays">
+                  <span class="report-calendar-weekday">Пн</span>
+                  <span class="report-calendar-weekday">Вт</span>
+                  <span class="report-calendar-weekday">Ср</span>
+                  <span class="report-calendar-weekday">Чт</span>
+                  <span class="report-calendar-weekday">Пт</span>
+                  <span class="report-calendar-weekday">Сб</span>
+                  <span class="report-calendar-weekday">Вс</span>
+                </div>
+                <div class="report-calendar-grid" id="report-calendar-grid"></div>
+                <div class="report-calendar-footer">
+                  <div class="report-calendar-selection" id="report-calendar-selection">Выберите дату начала</div>
+                  <button type="button" class="report-calendar-done" onclick="closeReportCalendar()">Готово</button>
+                </div>
+              </div>
+            </div>
+
+            <label>Комиссия тренера, %</label>
+            <input type="number" id="report-percent" min="0" max="100" step="1" inputmode="numeric">
+            <button class="report-calc-btn" id="report-calc-btn" onclick="calculateReport()">📊 Рассчитать период</button>
+
+            <div class="report-result" id="report-result" style="display:none;">
+              <div class="report-title" id="report-title"></div>
+              <div class="report-grid">
+                <div class="report-stat"><span class="report-stat-label">Проведено</span><span class="report-stat-value" id="report-conducted"></span></div>
+                <div class="report-stat"><span class="report-stat-label">Отменено</span><span class="report-stat-value" id="report-cancelled"></span></div>
+              </div>
+              <div class="report-total">
+                <div class="report-total-row"><span>Общая сумма</span><strong id="report-total-amount"></strong></div>
+                <div class="report-total-row"><span>Комиссия сервиса</span><strong id="report-commission"></strong></div>
+                <div class="report-total-row main"><span>Тренеру</span><strong id="report-trainer-amount"></strong></div>
+              </div>
+              <textarea class="report-textarea" id="report-message" readonly></textarea>
+              <div class="report-actions">
+                <button class="report-copy-btn" id="report-copy-btn" onclick="copyReport()">📋 Скопировать</button>
+                <button class="report-send-btn" id="report-send-btn" onclick="sendTrainerReport()">📨 Отправить тренеру</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <textarea id="admin-textarea" class="admin-textarea" placeholder="Введите сообщение..." rows="1"></textarea>
-      <button class="admin-send-btn" id="admin-send-btn" onclick="sendAdminMessage()">Отправить сообщение</button>
-
-      <div class="admin-schedule-box">
-        <h4 class="admin-schedule-title">📅 Расписание тренера</h4>
-        <div class="admin-week-tabs">
-          <button class="admin-week-tab active" id="admin-current-week-tab" onclick="selectAdminWeek('current')">Текущая неделя</button>
-          <button class="admin-week-tab" id="admin-next-week-tab" onclick="selectAdminWeek('next')">Следующая неделя</button>
+      <div class="admin-section" id="admin-message-section">
+        <button class="admin-section-header" onclick="toggleAdminSection('message')" aria-expanded="false">
+          <span class="admin-section-header-main">
+            <span>💬</span>
+            <span>
+              <span class="admin-section-title">Сообщение тренеру</span>
+              <span class="admin-section-subtitle">Написать и отправить сообщение</span>
+            </span>
+          </span>
+          <span class="admin-section-chevron">⌄</span>
+        </button>
+        <div class="admin-section-content">
+          <textarea id="admin-textarea" class="admin-textarea" placeholder="Введите сообщение..." rows="1"></textarea>
+          <button class="admin-send-btn" id="admin-send-btn" onclick="sendAdminMessage()">Отправить сообщение</button>
         </div>
-        <div id="admin-schedule-container">
-          <div class="status-msg">Загрузка...</div>
+      </div>
+
+      <div class="admin-section" id="admin-schedule-section">
+        <button class="admin-section-header" onclick="toggleAdminSection('schedule')" aria-expanded="false">
+          <span class="admin-section-header-main">
+            <span>📅</span>
+            <span>
+              <span class="admin-section-title">Расписание тренера</span>
+              <span class="admin-section-subtitle">Текущая и следующая неделя</span>
+            </span>
+          </span>
+          <span class="admin-section-chevron">⌄</span>
+        </button>
+        <div class="admin-section-content">
+          <div class="admin-schedule-box">
+            <div class="admin-week-tabs">
+              <button class="admin-week-tab active" id="admin-current-week-tab" onclick="selectAdminWeek('current')">Текущая неделя</button>
+              <button class="admin-week-tab" id="admin-next-week-tab" onclick="selectAdminWeek('next')">Следующая неделя</button>
+            </div>
+            <div id="admin-schedule-container">
+              <div class="status-msg">Загрузка...</div>
+            </div>
+            <div id="admin-form-host"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -744,6 +962,8 @@
   let adminScheduleCache = null;
   let adminSelectedWeek = 'current';
   let currentReport = null;
+  let reportCalendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
 
   function toggleAdminPanel() {
     const panel = document.getElementById('admin-panel');
@@ -825,14 +1045,17 @@
     adminSelectedWeek = 'current';
     selectedWeek = 'current';
 
-    document.getElementById('selected-trainer-name').innerText = `Кому: ${name}`;
+    document.getElementById('selected-trainer-name').innerText = `Тренер: ${name}`;
     document.getElementById('report-percent').value = selectedTrainerPercent;
     setCurrentMonthReportDates();
     resetReportUI();
+    setAdminSectionOpen('report', true);
+    setAdminSectionOpen('message', false);
+    setAdminSectionOpen('schedule', false);
     document.getElementById('trainers-list-container').style.display = 'none';
     document.getElementById('admin-msg-box').style.display = 'block';
 
-    // Показываем ровно ту же форму «Новая запись», которая используется тренером.
+    // Форма редактирования записи живёт внутри раскрываемого раздела расписания.
     moveFormCardIntoAdminPanel();
     resetForm();
     document.getElementById('form-card').style.display = 'block';
@@ -873,6 +1096,185 @@
     const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     document.getElementById('report-start-date').value = toInputDate(first);
     document.getElementById('report-end-date').value = toInputDate(last);
+    reportCalendarMonth = new Date(first.getFullYear(), first.getMonth(), 1);
+    updateReportRangeDisplay();
+    renderReportCalendar();
+  }
+
+  const REPORT_MONTHS = [
+    'Январь','Февраль','Март','Апрель','Май','Июнь',
+    'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
+  ];
+
+  function parseInputDate(value) {
+    if (!value) return null;
+    const parts = String(value).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+
+  function formatDateDisplay(value) {
+    const d = parseInputDate(value);
+    if (!d) return '—';
+    return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  }
+
+  function updateReportRangeDisplay() {
+    const start = document.getElementById('report-start-date').value;
+    const end = document.getElementById('report-end-date').value;
+    const display = document.getElementById('report-range-display');
+    const selection = document.getElementById('report-calendar-selection');
+    if (!display) return;
+
+    if (start && end) {
+      display.textContent = `${formatDateDisplay(start)} — ${formatDateDisplay(end)}`;
+    } else if (start) {
+      display.textContent = `${formatDateDisplay(start)} — выберите дату окончания`;
+    } else {
+      display.textContent = 'Выберите период';
+    }
+
+    if (selection) {
+      if (start && end) selection.textContent = `${formatDateDisplay(start)} — ${formatDateDisplay(end)}`;
+      else if (start) selection.textContent = `Начало: ${formatDateDisplay(start)} · выберите конец`;
+      else selection.textContent = 'Выберите дату начала';
+    }
+  }
+
+  function toggleReportCalendar() {
+    const popover = document.getElementById('report-calendar-popover');
+    const trigger = document.getElementById('report-range-trigger');
+    if (!popover) return;
+    const isOpen = popover.style.display !== 'none';
+
+    if (isOpen) {
+      closeReportCalendar();
+      return;
+    }
+
+    const start = parseInputDate(document.getElementById('report-start-date').value);
+    reportCalendarMonth = start
+      ? new Date(start.getFullYear(), start.getMonth(), 1)
+      : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    renderReportCalendar();
+    popover.style.display = 'block';
+    trigger?.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeReportCalendar() {
+    const popover = document.getElementById('report-calendar-popover');
+    const trigger = document.getElementById('report-range-trigger');
+    if (popover) popover.style.display = 'none';
+    trigger?.setAttribute('aria-expanded', 'false');
+  }
+
+  function changeReportCalendarMonth(delta) {
+    reportCalendarMonth = new Date(
+      reportCalendarMonth.getFullYear(),
+      reportCalendarMonth.getMonth() + delta,
+      1
+    );
+    renderReportCalendar();
+  }
+
+  function renderReportCalendar() {
+    const title = document.getElementById('report-calendar-month-title');
+    const grid = document.getElementById('report-calendar-grid');
+    if (!title || !grid) return;
+
+    title.textContent = `${REPORT_MONTHS[reportCalendarMonth.getMonth()]} ${reportCalendarMonth.getFullYear()}`;
+
+    const year = reportCalendarMonth.getFullYear();
+    const month = reportCalendarMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    const mondayOffset = (firstDay + 6) % 7;
+    const start = document.getElementById('report-start-date').value;
+    const end = document.getElementById('report-end-date').value;
+
+    let html = '';
+    for (let i = 0; i < mondayOffset; i++) {
+      html += '<button type="button" class="report-calendar-day is-outside" tabindex="-1"></button>';
+    }
+
+    const today = toInputDate(new Date());
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(year, month, day);
+      const iso = toInputDate(d);
+      const isStart = iso === start;
+      const isEnd = iso === end;
+      const isInRange = Boolean(start && end && iso > start && iso < end);
+      const classes = [
+        'report-calendar-day',
+        iso === today ? 'is-today' : '',
+        isStart ? 'is-start' : '',
+        isEnd ? 'is-end' : '',
+        isInRange ? 'in-range' : ''
+      ].filter(Boolean).join(' ');
+
+      html += `<button type="button" class="${classes}" onclick="selectReportCalendarDate('${iso}')">${day}</button>`;
+    }
+
+    grid.innerHTML = html;
+    updateReportRangeDisplay();
+  }
+
+  function selectReportCalendarDate(iso) {
+    const startEl = document.getElementById('report-start-date');
+    const endEl = document.getElementById('report-end-date');
+    const start = startEl.value;
+    const end = endEl.value;
+
+    if (!start || (start && end)) {
+      startEl.value = iso;
+      endEl.value = '';
+    } else if (iso < start) {
+      endEl.value = start;
+      startEl.value = iso;
+    } else {
+      endEl.value = iso;
+    }
+
+    currentReport = null;
+    resetReportUI();
+    renderReportCalendar();
+
+    if (startEl.value && endEl.value) {
+      // После выбора второй даты оставляем календарь открытым: диапазон хорошо виден.
+      // Закрывается кнопкой «Готово» или повторным нажатием на поле.
+    }
+  }
+
+  document.addEventListener('click', function(event) {
+    const field = document.getElementById('report-date-picker');
+    const popover = document.getElementById('report-calendar-popover');
+    if (!field || !popover || popover.style.display === 'none') return;
+    if (!field.contains(event.target)) closeReportCalendar();
+  });
+
+  function setAdminSectionOpen(section, isOpen) {
+    const sectionMap = {
+      report: 'admin-report-section',
+      message: 'admin-message-section',
+      schedule: 'admin-schedule-section'
+    };
+    const el = document.getElementById(sectionMap[section]);
+    if (!el) return;
+    el.classList.toggle('open', Boolean(isOpen));
+    const header = el.querySelector('.admin-section-header');
+    header?.setAttribute('aria-expanded', String(Boolean(isOpen)));
+  }
+
+  function toggleAdminSection(section) {
+    const sectionMap = {
+      report: 'admin-report-section',
+      message: 'admin-message-section',
+      schedule: 'admin-schedule-section'
+    };
+    const el = document.getElementById(sectionMap[section]);
+    if (!el) return;
+    setAdminSectionOpen(section, !el.classList.contains('open'));
   }
 
   function formatRubClient(value) {
@@ -1004,6 +1406,7 @@
   function selectAdminWeek(week) {
     adminSelectedWeek = week;
     selectedWeek = week;
+    setAdminSectionOpen('schedule', true);
     resetForm();
     updateAdminWeekTabs();
     renderAdminSchedule();
@@ -1136,9 +1539,9 @@
 
   function moveFormCardIntoAdminPanel() {
     const formCard = document.getElementById('form-card');
-    const adminMsgBox = document.getElementById('admin-msg-box');
-    if (formCard.parentElement !== adminMsgBox) {
-      adminMsgBox.appendChild(formCard);
+    const formHost = document.getElementById('admin-form-host');
+    if (formCard && formHost && formCard.parentElement !== formHost) {
+      formHost.appendChild(formCard);
     }
   }
 
@@ -1169,6 +1572,7 @@
     document.getElementById('form-card').classList.add('edit-mode-active');
 
     // В админском режиме submitForm должен сохранять запись выбранного тренера.
+    setAdminSectionOpen('schedule', true);
     document.getElementById('form-card').style.display = 'block';
     document.getElementById('form-card').scrollIntoView({ behavior: 'smooth' });
   }
