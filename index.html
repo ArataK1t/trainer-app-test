@@ -213,6 +213,84 @@
       cursor: pointer;
       padding: 0;
     }
+    /* === ОТЧЁТ ПО ДОХОДУ === */
+    .admin-report-card {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-color);
+    }
+    .admin-report-card h4 { margin: 0 0 12px; font-size: 14px; }
+    .report-hint {
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--hint-color);
+      margin: -2px 0 10px;
+    }
+    .report-calc-btn {
+      width: 100%;
+      border: none;
+      border-radius: 9px;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--btn-color);
+      color: var(--btn-text);
+    }
+    .report-calc-btn:disabled,
+    .report-send-btn:disabled,
+    .report-copy-btn:disabled { opacity: 0.55; }
+    .report-result {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--bg-color);
+    }
+    .report-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+    .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .report-stat {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 9px;
+    }
+    .report-stat-label { display: block; font-size: 11px; color: var(--hint-color); margin-bottom: 3px; }
+    .report-stat-value { font-size: 15px; font-weight: 700; }
+    .report-total {
+      margin-top: 4px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-color);
+    }
+    .report-total-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; font-size: 14px; }
+    .report-total-row strong { font-weight: 700; }
+    .report-total-row.main { font-size: 16px; padding-top: 7px; }
+    .report-textarea {
+      width: 100%;
+      min-height: 180px;
+      box-sizing: border-box;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.4;
+      resize: vertical;
+      background: var(--card-bg);
+      color: var(--text-color);
+    }
+    .report-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .report-copy-btn, .report-send-btn {
+      flex: 1;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .report-copy-btn { background: var(--border-color); color: var(--text-color); }
+    .report-send-btn { background: #2ecc71; color: #fff; }
+
     .admin-schedule-box { margin-top: 16px; }
     .admin-schedule-title { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
     .admin-week-tabs {
@@ -281,6 +359,43 @@
     <div id="admin-msg-box">
       <button class="admin-back-btn" onclick="backToTrainersList()">⬅ Назад к списку</button>
       <h4 id="selected-trainer-name"></h4>
+
+      <div class="admin-report-card">
+        <h4>📊 Расчёт дохода</h4>
+        <div class="report-hint">Синие записи считаются отменёнными и не входят в сумму. Чёрные записи считаются проведёнными.</div>
+        <div class="row">
+          <div class="col">
+            <label>С</label>
+            <input type="date" id="report-start-date">
+          </div>
+          <div class="col">
+            <label>По</label>
+            <input type="date" id="report-end-date">
+          </div>
+        </div>
+        <label>Комиссия тренера, %</label>
+        <input type="number" id="report-percent" min="0" max="100" step="1" inputmode="numeric">
+        <button class="report-calc-btn" id="report-calc-btn" onclick="calculateReport()">📊 Рассчитать период</button>
+
+        <div class="report-result" id="report-result" style="display:none;">
+          <div class="report-title" id="report-title"></div>
+          <div class="report-grid">
+            <div class="report-stat"><span class="report-stat-label">Проведено</span><span class="report-stat-value" id="report-conducted"></span></div>
+            <div class="report-stat"><span class="report-stat-label">Отменено</span><span class="report-stat-value" id="report-cancelled"></span></div>
+          </div>
+          <div class="report-total">
+            <div class="report-total-row"><span>Общая сумма</span><strong id="report-total-amount"></strong></div>
+            <div class="report-total-row"><span>Комиссия сервиса</span><strong id="report-commission"></strong></div>
+            <div class="report-total-row main"><span>Тренеру</span><strong id="report-trainer-amount"></strong></div>
+          </div>
+          <textarea class="report-textarea" id="report-message" readonly></textarea>
+          <div class="report-actions">
+            <button class="report-copy-btn" id="report-copy-btn" onclick="copyReport()">📋 Скопировать</button>
+            <button class="report-send-btn" id="report-send-btn" onclick="sendTrainerReport()">📨 Отправить тренеру</button>
+          </div>
+        </div>
+      </div>
+
       <textarea id="admin-textarea" class="admin-textarea" placeholder="Введите сообщение..." rows="1"></textarea>
       <button class="admin-send-btn" id="admin-send-btn" onclick="sendAdminMessage()">Отправить сообщение</button>
 
@@ -624,8 +739,11 @@
 
   // === ЛОГИКА АДМИН-ПАНЕЛИ ===
   let selectedTrainerId = null;
+  let selectedTrainerName = '';
+  let selectedTrainerPercent = 0;
   let adminScheduleCache = null;
   let adminSelectedWeek = 'current';
+  let currentReport = null;
 
   function toggleAdminPanel() {
     const panel = document.getElementById('admin-panel');
@@ -655,6 +773,8 @@
     }
   }
 
+  let trainersCache = [];
+
   function loadTrainersList() {
     fetch(GOOGLE_APP_URL, {
       method: 'POST',
@@ -662,23 +782,53 @@
     })
     .then(res => res.json())
     .then(data => {
-      if (data.success) {
-        let html = '';
-        data.trainers.forEach(t => {
-          html += `<div class="trainer-item" onclick="openMsgBox('${t.id}', '${t.name}')">👤 ${t.name}</div>`;
+      if (!data.success) throw new Error(data.error || 'Не удалось загрузить тренеров');
+
+      trainersCache = data.trainers || [];
+      let html = '';
+      trainersCache.forEach((t, index) => {
+        html += `<div class="trainer-item" data-trainer-index="${index}">👤 ${escapeHtml(t.name)}${t.percent !== undefined ? ` <span style="color:var(--hint-color);font-size:11px;">(${Number(t.percent)}%)</span>` : ''}</div>`;
+      });
+
+      const list = document.getElementById('trainers-list');
+      list.innerHTML = html || 'Тренеры не найдены';
+
+      list.querySelectorAll('[data-trainer-index]').forEach(el => {
+        el.addEventListener('click', () => {
+          const index = Number(el.getAttribute('data-trainer-index'));
+          const trainer = trainersCache[index];
+          if (trainer) openMsgBox(trainer.id, trainer.name, trainer.percent);
         });
-        document.getElementById('trainers-list').innerHTML = html || 'Тренеры не найдены';
-      }
+      });
+    })
+    .catch(err => {
+      document.getElementById('trainers-list').innerHTML = `<div class="status-msg" style="color:red;">${escapeHtml(err.message)}</div>`;
     });
   }
 
-  function openMsgBox(id, name) {
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function openMsgBox(id, name, percent) {
     selectedTrainerId = id;
+    selectedTrainerName = name || '';
+    selectedTrainerPercent = Number(percent);
+    if (!Number.isFinite(selectedTrainerPercent)) selectedTrainerPercent = 0;
+    currentReport = null;
     adminScheduleCache = null;
     adminSelectedWeek = 'current';
     selectedWeek = 'current';
 
     document.getElementById('selected-trainer-name').innerText = `Кому: ${name}`;
+    document.getElementById('report-percent').value = selectedTrainerPercent;
+    setCurrentMonthReportDates();
+    resetReportUI();
     document.getElementById('trainers-list-container').style.display = 'none';
     document.getElementById('admin-msg-box').style.display = 'block';
 
@@ -703,7 +853,152 @@
     document.getElementById('form-card').style.display = 'none';
     resetForm();
     selectedTrainerId = null;
+    selectedTrainerName = '';
+    selectedTrainerPercent = 0;
+    currentReport = null;
+    resetReportUI();
     adminScheduleCache = null;
+  }
+
+  function toInputDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function setCurrentMonthReportDates() {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    document.getElementById('report-start-date').value = toInputDate(first);
+    document.getElementById('report-end-date').value = toInputDate(last);
+  }
+
+  function formatRubClient(value) {
+    return `${Math.round(Number(value) || 0).toLocaleString('ru-RU')} ₽`;
+  }
+
+  function resetReportUI() {
+    const result = document.getElementById('report-result');
+    if (result) result.style.display = 'none';
+
+    const msg = document.getElementById('report-message');
+    if (msg) msg.value = '';
+
+    ['report-conducted','report-cancelled','report-total-amount','report-commission','report-trainer-amount','report-title']
+      .forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+      });
+  }
+
+  async function calculateReport() {
+    if (!selectedTrainerId) {
+      tg?.showAlert('Сначала выберите тренера');
+      return;
+    }
+
+    const startDate = document.getElementById('report-start-date').value;
+    const endDate = document.getElementById('report-end-date').value;
+    const percentRaw = document.getElementById('report-percent').value;
+
+    if (!startDate || !endDate) {
+      tg?.showAlert('Укажите период расчёта');
+      return;
+    }
+
+    const percent = Number(percentRaw);
+    if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+      tg?.showAlert('Комиссия должна быть от 0 до 100%');
+      return;
+    }
+
+    const btn = document.getElementById('report-calc-btn');
+    btn.disabled = true;
+    btn.innerText = '⏳ Считаем...';
+    resetReportUI();
+
+    try {
+      const response = await fetch(GOOGLE_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'getTrainerReport',
+          requesterId: rawUserId,
+          trainerId: selectedTrainerId,
+          startDate,
+          endDate,
+          percent
+        })
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Не удалось получить отчёт');
+
+      currentReport = data;
+      document.getElementById('report-title').textContent = `${data.trainerName} · ${data.period} · ${Number(data.percent)}%`;
+      document.getElementById('report-conducted').textContent = String(data.conductedCount);
+      document.getElementById('report-cancelled').textContent = String(data.cancelledCount);
+      document.getElementById('report-total-amount').textContent = formatRubClient(data.totalAmount);
+      document.getElementById('report-commission').textContent = formatRubClient(data.commissionAmount);
+      document.getElementById('report-trainer-amount').textContent = formatRubClient(data.trainerAmount);
+      document.getElementById('report-message').value = data.reportText || '';
+      document.getElementById('report-result').style.display = 'block';
+      showToast('✅ Отчёт рассчитан');
+    } catch (err) {
+      tg?.showAlert('Ошибка: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = '📊 Рассчитать период';
+    }
+  }
+
+  async function copyReport() {
+    if (!currentReport?.reportText) return;
+    const text = currentReport.reportText;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('📋 Отчёт скопирован');
+    } catch (e) {
+      const area = document.getElementById('report-message');
+      area.focus();
+      area.select();
+      document.execCommand('copy');
+      showToast('📋 Отчёт скопирован');
+    }
+  }
+
+  async function sendTrainerReport() {
+    if (!selectedTrainerId || !currentReport?.reportText) return;
+
+    const btn = document.getElementById('report-send-btn');
+    btn.disabled = true;
+    btn.innerText = '⏳ Отправляем...';
+
+    try {
+      const response = await fetch(GOOGLE_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'sendTrainerReport',
+          requesterId: rawUserId,
+          targetUserId: selectedTrainerId,
+          reportText: currentReport.reportText
+        })
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Не удалось отправить отчёт');
+
+      showToast('📨 Отчёт отправлен тренеру');
+    } catch (err) {
+      tg?.showAlert('Ошибка: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = '📨 Отправить тренеру';
+    }
   }
 
   function selectAdminWeek(week) {
